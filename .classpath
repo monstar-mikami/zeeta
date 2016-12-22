@@ -12,11 +12,11 @@
 	<classpathentry kind="lib" path="lib/s2/ognl-2.6.7.jar"/>
 	<classpathentry kind="lib" path="lib/s2/portlet-api-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/s2/geronimo-jta_1.0.1B_spec-1.0.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3.8.1"/>
 	<classpathentry kind="lib" path="lib/s2/s2-extension-2.4.22.jar"/>
 	<classpathentry kind="lib" path="lib/s2dao/s2-dao-1.0.47.jar"/>
 	<classpathentry kind="lib" path="lib/s2dao_tiger/s2-dao-tiger-1.0.47.jar"/>
 	<classpathentry kind="lib" path="lib/s2/s2-framework-2.4.22.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
