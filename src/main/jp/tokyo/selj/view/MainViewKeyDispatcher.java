@@ -6,6 +6,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.ActionMap;
 import javax.swing.JOptionPane;
 
+import org.apache.log4j.Logger;
+
 import jp.tokyo.selj.model.DocNode;
 import jp.tokyo.selj.view.FrmZeetaMain.ActCancelNewYouken;
 import jp.tokyo.selj.view.FrmZeetaMain.ActCommitDoc;
@@ -24,7 +26,8 @@ import jp.tokyo.selj.view.FrmZeetaMain.ActShowSearchWindow;
 public class MainViewKeyDispatcher implements KeyEventDispatcher{
 	ActionMap actionMap_ = null;
 	FrmZeetaMain mainFrame_ = null;
-	
+	Logger log = Logger.getLogger(this.getClass());  //  @jve:decl-index=0:
+
 	public MainViewKeyDispatcher(ActionMap actionMap, FrmZeetaMain mainFrame){
 		actionMap_ = actionMap;
 		mainFrame_ = mainFrame;
@@ -60,8 +63,9 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 			}
 		}else {
 			if (evt.getID()  == KeyEvent.KEY_PRESSED){
-//				log.debug("KEY_PRESSED="+evt);
-				if( (evt.getModifiers() & KeyEvent.CTRL_MASK )!=0 ){
+//				log.debug("evt.getModifiers()="+evt.getModifiers());
+//				log.debug("Util.keyEvent_ctrl()="+Util.keyEvent_ctrl());
+				if( (evt.getModifiers() & Util.keyModify_ctrl() )!=0 ){
 					switch(evt.getKeyCode()){
 					case KeyEvent.VK_UP:
 						actionMap_.get(ActMoveUp.class).actionPerformed(null);
@@ -72,19 +76,17 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 						ret = true;
 						break;
 					case KeyEvent.VK_LEFT:
-						JOptionPane.showConfirmDialog(
-								mainFrame_
-								,"history back key was changed to ALT+left",""
-								,JOptionPane.DEFAULT_OPTION
-								,JOptionPane.INFORMATION_MESSAGE);
+						DocNode docNode = mainFrame_.nodeHistory_.back();
+						if(docNode != null ){
+							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+						}
 						ret = true;
 						break;
 					case KeyEvent.VK_RIGHT:
-						JOptionPane.showConfirmDialog(
-								mainFrame_
-								,"history forward key was changed to ALT+right",""
-								,JOptionPane.DEFAULT_OPTION
-								,JOptionPane.INFORMATION_MESSAGE);
+						docNode = mainFrame_.nodeHistory_.forward();
+						if(docNode != null ){
+							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+						}
 						ret = true;
 						break;
 					case KeyEvent.VK_D:

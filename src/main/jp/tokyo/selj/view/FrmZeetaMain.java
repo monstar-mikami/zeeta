@@ -112,7 +112,7 @@ public class FrmZeetaMain extends BaseFrame {
 
     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	String dbUrl_ = ZeetaDBManager.getDBUrl();
-	static final String VER_ = "Zeeta ver1.3.02";
+	static final String VER_ = "Zeeta ver1.3.03";
     public String getTitle(){ 
     	return getInpDocTitle().getText()
     			+ " (" +dbUrl_+")"
@@ -562,7 +562,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActRemoveDoc(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "remove");
-			putValue(Action.SHORT_DESCRIPTION, "ノードを削除(ctrl+D, Del)");
+			putValue(Action.SHORT_DESCRIPTION, "ノードを削除("+Util.keyEvent_ctrl_str()+"+D, Del)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/remove.gif")));
 		}
@@ -665,7 +665,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActPrepareCreateDocAsChild(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "New as child");
-			putValue(Action.SHORT_DESCRIPTION, "子ノード追加(Ins、ctrl+N)");
+			putValue(Action.SHORT_DESCRIPTION, "子ノード追加(Ins、"+Util.keyEvent_ctrl_str()+"+N)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/newAsChild.gif")));
 		}
@@ -678,7 +678,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActPrepareCreateDocAsSibling(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "New as sibling");
-			putValue(Action.SHORT_DESCRIPTION, "兄弟ノード追加(Shift+Ins, ctrl+M)");
+			putValue(Action.SHORT_DESCRIPTION, "兄弟ノード追加(Shift+Ins, "+Util.keyEvent_ctrl_str()+"+M)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/newAsSibling.gif")));
 		}
@@ -691,7 +691,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActCommitDoc(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "commit");
-			putValue(Action.SHORT_DESCRIPTION, "反映(ctrl+S, ctrl+Enter)");
+			putValue(Action.SHORT_DESCRIPTION, "反映("+Util.keyEvent_ctrl_str()+"+S, "+Util.keyEvent_ctrl_str()+"+Enter)");
 			putValue(Action.ACCELERATOR_KEY, 
 					KeyStroke.getKeyStroke(KeyEvent.VK_K, KeyEvent.ALT_MASK));
 		}
@@ -731,7 +731,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActDuplicateDoc(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "duplicate");
-			putValue(Action.SHORT_DESCRIPTION, "ノードを２重化(ctrl+W)");
+			putValue(Action.SHORT_DESCRIPTION, "ノードを２重化("+Util.keyEvent_ctrl_str()+"+W)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/dup.gif")));
 //			putValue(Action.ACCELERATOR_KEY, 
@@ -1101,7 +1101,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActMoveUp(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "moveUp");
-			putValue(Action.SHORT_DESCRIPTION, "一つ上に移動(ctrl+↑)");
+			putValue(Action.SHORT_DESCRIPTION, "一つ上に移動("+Util.keyEvent_ctrl_str()+"+↑)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/moveUp.gif")));
 		}
@@ -1129,7 +1129,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActMoveDown(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "moveDown");
-			putValue(Action.SHORT_DESCRIPTION, "一つ下に移動(ctrl+↓)");
+			putValue(Action.SHORT_DESCRIPTION, "一つ下に移動("+Util.keyEvent_ctrl_str()+"+↓)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/moveDown.gif")));
 		}
@@ -1157,7 +1157,7 @@ public class FrmZeetaMain extends BaseFrame {
 		public ActShowSearchWindow(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "OpenSearchWindow");
-			putValue(Action.SHORT_DESCRIPTION, "検索画面を開く(ctrl+F)");
+			putValue(Action.SHORT_DESCRIPTION, "検索画面を開く("+Util.keyEvent_ctrl_str()+"+F)");
 			putValue(Action.SMALL_ICON, 
 					new ImageIcon(getClass().getResource("/image/search.gif")));
 		}
@@ -2359,57 +2359,44 @@ public class FrmZeetaMain extends BaseFrame {
 		}
 
 		
-		//Windows / MAX_OSX
-		int ctrl_mask = KeyEvent.CTRL_MASK;
-		String ctrl_mask_str = "ctrl";
-		if(isMacOS()){
-			ctrl_mask = KeyEvent.CTRL_DOWN_MASK;
-			ctrl_mask_str = "command";
-		}
-		
 		Action act;
 		Object key = 
-			treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_C, ctrl_mask));
+			treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_C, Util.keyEvent_ctrl()));
 		if( key == null){
 			act = new DelegateTreeAction(null);
 		}else{
 			act = new DelegateTreeAction(treeActMap.get(key));
 		}
-		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのコピー("+ctrl_mask_str+"+C)"); 
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのコピー("+Util.keyEvent_ctrl_str()+"+C)"); 
 		act.putValue(Action.SMALL_ICON, 
 			new ImageIcon(getClass().getResource("/image/copy.gif")));
 		getJToolBar().add(act);
 		actionMap_.put(ACTKEY_NODE_COPY, act);
 		
-		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_X, ctrl_mask));
+		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_X, Util.keyEvent_ctrl()));
 		if( key == null){
 			act = new DelegateTreeAction(null);
 		}else{
 			act = new DelegateTreeAction(treeActMap.get(key));
 		}
-		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードをペースト時にカット("+ctrl_mask_str+"+X)"); 
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードをペースト時にカット("+Util.keyEvent_ctrl_str()+"+X)"); 
 		act.putValue(Action.SMALL_ICON, 
 			new ImageIcon(getClass().getResource("/image/cut.gif")));
 		getJToolBar().add(act);
 		actionMap_.put(ACTKEY_NODE_CUT, act);
 		
-		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_V, ctrl_mask));
+		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_V, Util.keyEvent_ctrl()));
 		if( key == null){
 			act = new DelegateTreeAction(null);
 		}else{
 			act = new DelegateTreeAction(treeActMap.get(key));
 		}
-		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのペースト("+ctrl_mask_str+"+V)"); 
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのペースト("+Util.keyEvent_ctrl_str()+"+V)"); 
 		act.putValue(Action.SMALL_ICON, 
 			new ImageIcon(getClass().getResource("/image/paste.gif")));
 		getJToolBar().add(act);
 		actionMap_.put(ACTKEY_NODE_PASTE, act);
 	}
-	boolean isMacOS(){
-		String os_name = System.getProperty("os.name");
-		return os_name.toUpperCase().indexOf("MAC") > -1;
-	}
-	
 	
 	public void initState(){
 		viewState_.setNeutral();
