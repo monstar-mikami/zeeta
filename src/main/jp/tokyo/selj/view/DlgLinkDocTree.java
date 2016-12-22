@@ -138,7 +138,7 @@ public class DlgLinkDocTree extends JDialog implements ListSelectionListener{
 			jTree.setShowsRootHandles(true);
 			jTree.setRootVisible(true);
 			jTree.setToggleClickCount(0);
-			jTree.setToolTipText("Enterキーで正ツリーをポイントします。");
+			jTree.setToolTipText("EnterキーでMain Treeをポイントします。");
 			jTree.addMouseListener(new java.awt.event.MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
 					if(e.getButton() == MouseEvent.BUTTON3){	//右ボタン

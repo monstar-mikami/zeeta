@@ -222,7 +222,7 @@ public class PnlNodeList extends JPanel {
 	public JTable getDspNodes2() {
 		if (dspNodes2 == null) {
 			dspNodes2 = new JTable();
-			dspNodes2.setToolTipText("ダブルクリック、Enterキーで正ツリーをポイントします。");
+			dspNodes2.setToolTipText("ダブルクリック、EnterキーでMain Treeをポイントします。");
 			dspNodes2.addMouseListener(new java.awt.event.MouseAdapter() {
 				public void mouseClicked(java.awt.event.MouseEvent e) {
 					if(e.getClickCount() > 1){

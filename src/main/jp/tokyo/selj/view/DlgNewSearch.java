@@ -17,6 +17,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -34,6 +35,7 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
+import javax.swing.tree.TreeNode;
 
 import jp.tokyo.selj.common.AppException;
 import jp.tokyo.selj.common.PreferenceWindowHelper;
@@ -565,6 +567,71 @@ public class DlgNewSearch extends JDialog implements ItemListener{
 			dspMsg.setText("hit node count : " + pnlNodeList.getDocs().size());
 		}
 		List<Doc> searchUnderSelectedNode(Searcher searcher, String searchStr){
+			//普通に階層を辿って検索するととてつもなく遅い
+			//そのため、一旦普通に検索してから、その親にカレントノードがふくまれているか
+			//検査する方式とする
+			
+			class TempSearcher{
+				Doc targetDoc_;
+				List<Doc> path_ = null;
+				TempSearcher(DocNode targetDocNode){
+					targetDoc_ = targetDocNode.getDoc();
+				}
+				boolean isExist(DocNode node){
+					if( isExist2(node) ){
+						path_.add(node.getDoc());
+						return true;
+					}
+					return false;
+				}
+				//nodeの親にtargetDoc_が含まれているかを検査する
+				boolean isExist2(DocNode node){
+					if( node.getDoc().getDocId() == targetDoc_.getDocId()){
+						path_ = new ArrayList<Doc>();
+						return true;
+					}else{
+						Enumeration<DocNode> children = (Enumeration<DocNode>)node.children();
+						while( children.hasMoreElements()){
+							DocNode child = children.nextElement();
+							if(child.isRoot()){
+								//do nothing
+							}else if(isExist2(child)){
+								path_.add(child.getDoc());
+								return true;
+							}
+						}
+					}
+					return false;
+				}
+			}
+			//カレントノード
+			FrmZeetaMain main = (FrmZeetaMain)getOwner();
+			DocNode curNode = main.viewState_.getCurrentNode(); 
+			TempSearcher ts = new TempSearcher(curNode);
+			
+			
+			//まずは、フツーに検索
+			List<Doc> searchResult = searcher.searchDB(searchStr);
+			
+			//検索結果個々の親にcurNodeが、含まれていたらresultに登録
+			List<Doc> result = new ArrayList<Doc>();
+int cnt=0;			
+			for(Doc doc:searchResult){
+log.debug(""+(++cnt)+"/"+searchResult.size());
+				DocNode revTop = new DocNode(doc);	//docのコピーを作成
+				revTop = main.docModel_.addParentDocFromDbAll(revTop);	//revTopは、docの親達の塊なのだ
+log.debug("\t"+"revTop 完成");
+				if( ts.isExist(revTop)){
+					result.add(
+						new DocWithParentPath(revTop.getDoc(), ts.path_)
+					);
+				}
+log.debug("\t"+"isExist 完了");
+			}
+
+			return result;
+			
+/*			
 			class DescentSearcher implements DocProcessor{
 				List<Doc> docs_ = new ArrayList<Doc>();
 				String searchStr_;
@@ -574,6 +641,7 @@ public class DlgNewSearch extends JDialog implements ItemListener{
 					searcher_ = searcher;
 				}
 				public boolean process(Doc doc, List<Doc> parents){
+
 					boolean hit=false;
 					if(inpCheckWholeWord.isEnabled() && inpCheckWholeWord.isSelected()){
 						if(searcher_.compareDocWholeWord(doc, searchStr_)){
@@ -618,6 +686,7 @@ public class DlgNewSearch extends JDialog implements ItemListener{
 			main.docModel_.processAllDoc2(main.viewState_.getCurrentNode().getDoc(), 
 						proc, new ArrayList<Doc>());
 			return proc.docs_;
+*/
 			
 //			selectionLintener2_.setRootNode(main.viewState_.getCurrentNode());
 //			pnlNodeList.setup(proc.docs_, selectionLintener2_);

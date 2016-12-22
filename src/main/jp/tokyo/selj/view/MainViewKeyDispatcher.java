@@ -4,6 +4,7 @@ import java.awt.KeyEventDispatcher;
 import java.awt.event.KeyEvent;
 
 import javax.swing.ActionMap;
+import javax.swing.JOptionPane;
 
 import jp.tokyo.selj.model.DocNode;
 import jp.tokyo.selj.view.FrmZeetaMain.ActCancelNewYouken;
@@ -71,17 +72,19 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 						ret = true;
 						break;
 					case KeyEvent.VK_LEFT:
-						DocNode docNode = mainFrame_.nodeHistory_.back();
-						if(docNode != null ){
-							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
-						}
+						JOptionPane.showConfirmDialog(
+								mainFrame_
+								,"history back key was changed to ALT+left",""
+								,JOptionPane.DEFAULT_OPTION
+								,JOptionPane.INFORMATION_MESSAGE);
 						ret = true;
 						break;
 					case KeyEvent.VK_RIGHT:
-						docNode = mainFrame_.nodeHistory_.forward();
-						if(docNode != null ){
-							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
-						}
+						JOptionPane.showConfirmDialog(
+								mainFrame_
+								,"history forward key was changed to ALT+right",""
+								,JOptionPane.DEFAULT_OPTION
+								,JOptionPane.INFORMATION_MESSAGE);
 						ret = true;
 						break;
 					case KeyEvent.VK_D:
@@ -111,6 +114,23 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 						break;
 					case KeyEvent.VK_F12:	//隠し機能
 						actionMap_.get(ActShowDebugWindow.class).actionPerformed(null);
+						ret = true;
+						break;
+					}
+				}else if( (evt.getModifiers() & KeyEvent.ALT_MASK )!=0 ){
+					switch(evt.getKeyCode()){
+					case KeyEvent.VK_LEFT:
+						DocNode docNode = mainFrame_.nodeHistory_.back();
+						if(docNode != null ){
+							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+						}
+						ret = true;
+						break;
+					case KeyEvent.VK_RIGHT:
+						docNode = mainFrame_.nodeHistory_.forward();
+						if(docNode != null ){
+							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+						}
 						ret = true;
 						break;
 					}

@@ -71,93 +71,27 @@ public class DocModel extends DefaultTreeModel{
 	public DocStr getDocStr(long parent, long child){
 		return docStrDao_.find(parent, child);
 	}	
-	public void initializeReverseModel(DocNode curNode) {
-		DocNode node = new DocNode(curNode.getDoc());	//素のNodeを作成せにゃあかん
-		
-		//親要件を全て追加
-//		DocNode top = addAllParentDocFromDb(node);
-		
-		//子要件を追加
-		DocNode top = addParentDocFromDb(node);
-		
-		//孫要件を追加
-		top = addJijiDocFromDb(top);
-		
-		setRoot(top);
-		reload(top);
-		
-	}
-/*
-	//0.9.04以前に逆ツリー表示に使用していた
-	public DocNode addAllParentDocFromDb(DocNode node){
-		log.trace("start");
-		if(node == null){
-			throw new IllegalArgumentException("node is null.");
-		}
-		
-		DocDao docDao = (DocDao) daoCont_.getComponent(DocDao.class);
-		DocStrDao docStrDao = (DocStrDao) daoCont_.getComponent(DocStrDao.class);
-
-		Doc doc = node.getDoc();
-		List<DocStr> parents = docStrDao.findOyaDocStr(
-					new DocStrSearchCondition(doc.getDocId(),
-							(doc.getSortType()==null)? null:doc.getSortType().getOrderSent())
-				);
-
-//		if(parents.isEmpty()){
-//			return node;
-//		}
-//		long[] ids = new long[parents.size()];
-//		for(int i=0;i < parents.size() ; i++){
-//			ids[i] = parents.get(i).getOyaDocId();
-//		}
-//		List<Doc> oyas = docDao.findByDocIds(ids);
-//		for(int i=0;i < oyas.size() ; i++){
-//			DocNode newDocNode = new DocNode(oyas.get(i));
-//			newDocNode.resetParentCount(docStrDao_);
-//			
-//			addAllParentDocFromDb(newDocNode);
-//			
-//			node.add(newDocNode);
-//		}
-		
-		for(int i=0;i < parents.size() ; i++){
-			DocStr docStr = parents.get(i);
-			
-			//注：要件構造が取得する子要件・親要件は、SotrTypeが読み込まれていない！
-			Doc oyaDoc = docDao.findByDocId(docStr.getOyaDocId());
-			
-			DocNode newDocNode = new DocNode(oyaDoc);
-			newDocNode.resetParentCount(docStrDao_);
-			
-			addAllParentDocFromDb(newDocNode);
-			
-			node.add(newDocNode);
-		}
-		log.trace("end");
-		return node;
-	}
-*/
-	
 	
 	public void initialize() {
 		//root要件を追加
-		Doc root;
 		List roots = docDao_.findByDocTypeId(Doc.ROOT_TYPE);
 		if( roots.size() <= 0 ){	//ルートなし（新規作成時）
 			//一旦DBに書き込んで再読み込み
 			Doc tempRoot = new Doc();
 			tempRoot.setDocTypeId(Doc.ROOT_TYPE);
 			tempRoot.setDocTitle(ROOT_TITLE);
-			tempRoot.setDocCont("created at "+new Date());
+			tempRoot.setDocCont("created on "+new Date());
 			docDao_.insert(tempRoot);
 			roots = docDao_.findByDocTypeId(Doc.ROOT_TYPE);
 		}
-		root = (Doc)roots.get(0);
-		//s2daoは、関連テーブル１つ分のリンクしかjoinしないため、ここでDocをリロード
-		root = docDao_.findByDocId(root.getDocId());
-		DocNode node = new DocNode(root);
+		initialize( ((Doc)roots.get(0)).getDocId() );
 		
+	}
+	public void initialize(long docId) {
+		//s2daoは、関連テーブル１つ分のリンクしかjoinしないため、ここでDocをリロード
+		Doc doc = docDao_.findByDocId(docId);
+		DocNode node = new DocNode(doc);
+
 		//子要件を追加
 		DocNode top = addChildDocFromDb(node);
 		
@@ -364,17 +298,6 @@ public class DocModel extends DefaultTreeModel{
 		log.trace("end");
 		return node;
 	}
-	//逆ツリー用
-	public DocNode addJijiDocFromDb(DocNode node){
-		log.trace("start");
-		Enumeration parents =node.children();
-		while(parents.hasMoreElements()){
-			DocNode parent = (DocNode)parents.nextElement();
-			parent = addParentDocFromDb(parent);
-		}
-		log.trace("end");
-		return node;
-	}
 	public DocNode addChildDocFromDb(DocNode oyaNode){
 		log.trace("start");
 //		long t = System.currentTimeMillis();
@@ -428,8 +351,8 @@ public class DocModel extends DefaultTreeModel{
 		log.trace("end");
 		return oyaNode;
 	}
-	//逆ツリー用
-	public DocNode addParentDocFromDb(DocNode koNode){
+	//descent search用（全世代）
+	public DocNode addParentDocFromDbAll(DocNode koNode){
 		log.trace("start");
 		
 		if(koNode == null){
@@ -457,6 +380,10 @@ public class DocModel extends DefaultTreeModel{
 			DocNode newDocNode = new DocNode(doc);
 			newDocNode.resetParentCount(docStrDao_);
 			koNode.add(newDocNode);
+			
+			if(!newDocNode.getDoc().isRoot()){	//ルートノード以外の場合は、更に親を追加
+				addParentDocFromDbAll(newDocNode);
+			}
 		}
 		log.trace("end");
 		return koNode;
@@ -575,7 +502,9 @@ public class DocModel extends DefaultTreeModel{
 		throws AppException{
 		
 		Doc impDoc = impNode.getDoc();
-		impDoc.setDocTypeId(0);	//ルートの可能性もあるのでクリア
+		if(impDoc.getDocTypeId() == Doc.ROOT_TYPE){
+			impDoc.setDocTypeId(0);	//ルートだったらクリア
+		}
 		boolean isInsertedDoc = false;
     	long impDocId = impDoc.getDocId();
     	if( idMap.containsKey(impDocId)){
@@ -808,7 +737,6 @@ public class DocModel extends DefaultTreeModel{
 			trn_.begin();
 			deleteDoc(removeNode);		
 			trn_.commit();
-			
 			log.trace("end");
 		}catch(Throwable e){
 			try {

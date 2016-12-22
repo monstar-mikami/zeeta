@@ -84,16 +84,23 @@ import jp.tokyo.selj.dao.SortType;
 import jp.tokyo.selj.dao.Work;
 import jp.tokyo.selj.dao.WorkType;
 import jp.tokyo.selj.model.DocModel;
+import jp.tokyo.selj.model.DocModel.NodeProcessor;
 import jp.tokyo.selj.model.DocNode;
 import jp.tokyo.selj.model.MasterComboModel;
 import jp.tokyo.selj.model.OutputOfWorkListModel;
-import jp.tokyo.selj.model.DocModel.NodeProcessor;
 import jp.tokyo.selj.util.ClipboardStringWriter;
+import jp.tokyo.selj.view.component.ZTree;
 import jp.tokyo.selj.view.tools.DlgTools;
+import jp.tokyo.selj.view.trans.TreeNodeTransferHandler;
+import jp.tokyo.selj.view.trans.TreeNodeTransferHandler2;
 
 import org.apache.log4j.Logger;
 
 public class FrmZeetaMain extends BaseFrame {
+	//2nd tree view との識別をする
+	static final String TREE_TYPE_MAIN = "main tree";
+	
+	
 	//actionMap_のキー
 	static final String ACTKEY_NODE_COPY = "nodeCopy";
 	static final String ACTKEY_NODE_CUT = "nodeCut";
@@ -103,11 +110,9 @@ public class FrmZeetaMain extends BaseFrame {
 	DocModel docModel_ = null;
 	static final String DEVIDER_LOC_KEY = Util.getClassName(FrmZeetaMain.class) + "/devider_loc1";
 
-	boolean isDisableDragWithoutShitfKey_ = true;	//TreeのドラッグMoveはshiftKeyを押さなければならない場合はtrue
-    
     // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	String dbUrl_ = ZeetaDBManager.getDBUrl();
-	static final String VER_ = "Zeeta ver1.1.00";
+	static final String VER_ = "Zeeta ver1.3.02";
     public String getTitle(){ 
     	return getInpDocTitle().getText()
     			+ " (" +dbUrl_+")"
@@ -126,7 +131,7 @@ public class FrmZeetaMain extends BaseFrame {
 		   public void run() {
 			   inpDocCont.requestFocus();
 		   }
- };
+    };
 
     protected final String LAST_SELECTED_NODE_ID = getName()+"_selected_id";
 	protected final String LINE_WRAP = getName()+"_lineWrap";
@@ -137,12 +142,13 @@ public class FrmZeetaMain extends BaseFrame {
 
 	private JSplitPane jSplitPane = null;
 
-	private JTree jTree = null;
+	private ZTree jTree = null;
 
 	private JScrollPane cntScrTree = null;
 
 	DocTreeCellRenderer cellRenderer_ = null;  //  @jve:decl-index=0:
 	DlgReverseTree revTree_;
+	Dlg2ndTree secndTree_;
 
 	private JTabbedPane jTabbedPane = null;
 	private JPanel cntDetail = null;
@@ -362,14 +368,17 @@ public class FrmZeetaMain extends BaseFrame {
 						""+inpUser.getModel().getSelectedItem()
 			);
 			ret.setDocTypeId(detail_docTypeId_);
-			if(detail_docTypeId_ != Doc.ROOT_TYPE){
-				//Titleのプレフィクスでlink nodeを決定する
-				String pref = SysZeetaManager.getSysZeeta().getLinkNodePref();
-				if( pref != null && pref.trim().length() > 0){
-					if(ret.getDocTitle().startsWith(pref)){
-						inpChkLinkNode.setSelected(true);
-					}
+
+			//Titleのプレフィクスでlink nodeを決定する
+			String pref = SysZeetaManager.getSysZeeta().getLinkNodePref();
+			if( pref != null && pref.trim().length() > 0){
+				if(ret.getDocTitle().startsWith(pref)){
+					inpChkLinkNode.setSelected(true);
+				}else{
+					inpChkLinkNode.setSelected(false);
 				}
+			}
+			if(detail_docTypeId_ != Doc.ROOT_TYPE){
 				if(inpChkLinkNode.isSelected()){
 					ret.setDocTypeId(Doc.LINK_TYPE);
 				}else{
@@ -515,8 +524,8 @@ public class FrmZeetaMain extends BaseFrame {
 					viewState_.getCurrentNode(),
 					viewState_.getClipNode().getDoc());
 			//refresh
-			Action act = actionMap_.get(ActRefreshSpecific.class);
-			act.putValue(ActRefreshSpecific.REFRESH_NODE, newNode);
+			Action act = actionMap_.get(ActRefreshNode.class);
+			act.putValue(ActRefreshNode.REFRESH_NODE, newNode);
 			act.actionPerformed(e);
 			
 			if(type == MOVE){
@@ -577,8 +586,8 @@ public class FrmZeetaMain extends BaseFrame {
 				isExecute_ = false;
 				if( JOptionPane.showConfirmDialog(
 						FrmZeetaMain.this
-						,"選択中の要件と全ての子要件を削除します。\n" +
-						"ただし、他の親からの関連がある場合は、要件の削除は行わず" +
+						,"選択中のノードと全ての子ノードを削除します。\n" +
+						"ただし、他の親からの関連がある場合は、ノードの削除は行わず" +
 						"関連のみ削除します。\n" +
 						"よろしいですか？",""
 						,JOptionPane.YES_NO_OPTION
@@ -917,15 +926,15 @@ public class FrmZeetaMain extends BaseFrame {
 				}
 			}
 			
-			Action act = actionMap_.get(ActRefreshSpecific.class);
-			act.putValue(ActRefreshSpecific.REFRESH_NODE,  viewState_.getCurrentNode());
+			Action act = actionMap_.get(ActRefreshNode.class);
+			act.putValue(ActRefreshNode.REFRESH_NODE,  viewState_.getCurrentNode());
 			act.actionPerformed(e);
 		}
 	}
 	//指定ノードのリフレッシュ
-	class ActRefreshSpecific extends ActBase2 {
-		static final String REFRESH_NODE = "REFRESH_NODE";
-		public ActRefreshSpecific(ActionMap map) {
+	public class ActRefreshNode extends ActBase {		//TreeNodeTransferHandlerから参照されるためpublicにしている
+		public static final String REFRESH_NODE = "REFRESH_NODE";
+		public ActRefreshNode(ActionMap map) {
 			super(map);
 			putValue(Action.NAME, "refreshSpecific");
 			putValue(Action.SHORT_DESCRIPTION, "指定ノードのリフレッシュ");
@@ -1234,6 +1243,25 @@ public class FrmZeetaMain extends BaseFrame {
 			setCursor(Util.WAIT_CURSOR);
 			try{
 				getDlgReverseTree().setVisible(true, viewState_.getCurrentNode());
+			}finally{
+				setCursor(Cursor.getDefaultCursor());
+			}
+
+	    }
+	}
+	//2ndツリー画面表示
+	class ActShow2ndTreeView extends ActBase2 {
+		public ActShow2ndTreeView(ActionMap map) {
+			super(map);
+			putValue(Action.NAME, "show 2nd view");
+			putValue(Action.SHORT_DESCRIPTION, "2nd view. 離れたノードのコピペに便利です");
+			putValue(Action.SMALL_ICON, 
+					new ImageIcon(getClass().getResource("/image/2ndView.gif")));
+		}
+		public void actionPerformed2(ActionEvent e) {
+			setCursor(Util.WAIT_CURSOR);
+			try{
+				getDlg2ndTree().setVisible(true, viewState_.getCurrentNode());
 			}finally{
 				setCursor(Cursor.getDefaultCursor());
 			}
@@ -1550,21 +1578,13 @@ public class FrmZeetaMain extends BaseFrame {
 	 * 	
 	 * @return javax.swing.JTree	
 	 */
-	private JTree getJTree() {
+	private ZTree getJTree() {
 		if (jTree == null) {
-			jTree = new JTree(){
-				protected void processMouseMotionEvent(MouseEvent e){
-					if(e.getID() == MouseEvent.MOUSE_DRAGGED 
-							&& (!e.isShiftDown() && isDisableDragWithoutShitfKey_)
-							&& !e.isControlDown()
-					){
-						return;
-					}
-					super.processMouseMotionEvent(e);
-				}
-			};
+			jTree = new ZTree();
+			jTree.setTreeType(TREE_TYPE_MAIN);
+			jTree.setCanPasteNodeFromAnotherProcess(true);
 			jTree.setShowsRootHandles(true);
-			jTree.setToggleClickCount(0);
+//			jTree.setToggleClickCount(0);
 			jTree.getSelectionModel().
 				setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 			
@@ -1596,6 +1616,9 @@ public class FrmZeetaMain extends BaseFrame {
 					}
 					
 					//選択されたノードをdetailに表示
+					if( !(e.getPath().getLastPathComponent() instanceof DocNode)){
+						return;
+					}
 					DocNode node = (DocNode)e.getPath().getLastPathComponent();
 					
 					nodeHistory_.add(node);
@@ -2089,7 +2112,7 @@ public class FrmZeetaMain extends BaseFrame {
 		new ActPasteNodeCopy(actionMap_);
 		new ActPrepareCreateDocAsChild(actionMap_);
 		new ActPrepareCreateDocAsSibling(actionMap_);
-		new ActRefreshSpecific(actionMap_);
+		new ActRefreshNode(actionMap_);
 		new ActRefreshCurrent(actionMap_);
 		new ActUpdateIfDarty(actionMap_);
 		new ActUpdateDoc(actionMap_);
@@ -2102,6 +2125,7 @@ public class FrmZeetaMain extends BaseFrame {
 		new ActExpandAll(actionMap_);
 		new ActShowDebugWindow(actionMap_);
 		new ActShowReverseTreeView(actionMap_);
+		new ActShow2ndTreeView(actionMap_);
 		new ActShowExportView(actionMap_);
 		new ActShowSummaryView(actionMap_);
 		new ActShowWorkUpdater(actionMap_);
@@ -2129,7 +2153,7 @@ public class FrmZeetaMain extends BaseFrame {
 		
 		String smartDnD_str = System.getProperty("smartDnD");
 		if( smartDnD_str != null && "1".equals(smartDnD_str)){
-			isDisableDragWithoutShitfKey_ = false;
+			getJTree().setNeedShiftForMoveNode(false);
 		}
 
         //Treeモデル
@@ -2143,7 +2167,7 @@ public class FrmZeetaMain extends BaseFrame {
 //		jTree.addPropertyChangeListener("font",cellRenderer_);
 		//DnD
 		TreeNodeTransferHandler transferHandler = 
-			new TreeNodeTransferHandler(this, actionMap_);
+			new TreeNodeTransferHandler2(this, jTree, actionMap_.get(ActRefreshNode.class));
 		jTree.setTransferHandler(transferHandler);
 		jTree.setDragEnabled(true);
 		//Treeのショートカットとボタン登録
@@ -2164,6 +2188,7 @@ public class FrmZeetaMain extends BaseFrame {
 		getJTree().addTreeSelectionListener(getDspWorkList());
 		getJTree().addTreeSelectionListener(getDlgReverseTree());
 		getJTree().addTreeSelectionListener(nodeInfo_);
+//		getJTree().addTreeSelectionListener(getDlg2ndTree());	同期はしない
 		
 		//ComboBoxの設定
 		setupComboBox();
@@ -2185,15 +2210,16 @@ public class FrmZeetaMain extends BaseFrame {
 		getJToolBar().add(actionMap_.get(ActPrepareCreateDocAsSibling.class));
 		getJToolBar().add(actionMap_.get(ActRemoveDoc.class));
 		getJToolBar().add(actionMap_.get(ActDuplicateDoc.class));
+		getJToolBar().add(actionMap_.get(ActRefreshCurrent.class));
+		getJToolBar().add(actionMap_.get(ActExpandAll.class));
 		getJToolBar().addSeparator();
 		getJToolBar().add(actionMap_.get(ActBookMark.class));
 		getJToolBar().add(actionMap_.get(ActBookMarkNavi.class));
 		getJToolBar().addSeparator();
-		getJToolBar().add(actionMap_.get(ActRefreshCurrent.class));
 		getJToolBar().add(actionMap_.get(ActShowParents.class));
 		getJToolBar().add(actionMap_.get(ActShowSearchWindow.class));
-		getJToolBar().add(actionMap_.get(ActExpandAll.class));
 //		getJToolBar().add(actionMap_.get(ActBackup.class));
+		getJToolBar().add(actionMap_.get(ActShow2ndTreeView.class));
 		getJToolBar().add(actionMap_.get(ActShowReverseTreeView.class));
 		getJToolBar().add(actionMap_.get(ActShowExportView.class));
 		getJToolBar().add(actionMap_.get(ActShowSummaryView.class));
@@ -2201,22 +2227,23 @@ public class FrmZeetaMain extends BaseFrame {
 		getJToolBar().add(actionMap_.get(ActShowOutputList.class));
 		getJToolBar().addSeparator();
 		getJToolBar().add(actionMap_.get(ActShowToolsWindow.class));
+		getJToolBar().addSeparator();
 		
 		//Treeのポップアップメニューの生成
 		getMnuTreePopup().add(actionMap_.get(ActPrepareCreateDocAsChild.class));
 		getMnuTreePopup().add(actionMap_.get(ActPrepareCreateDocAsSibling.class));
 		getMnuTreePopup().add(actionMap_.get(ActRemoveDoc.class));
 		getMnuTreePopup().add(actionMap_.get(ActDuplicateDoc.class));
-//		getMnuTreePopup().add(actionMap_.get(ActRefreshCurrent.class));
+		getMnuTreePopup().add(actionMap_.get(ActExpandAll.class));
+		getMnuTreePopup().add(actionMap_.get(ActRefreshCurrent.class));
 		getMnuTreePopup().add(actionMap_.get(ActMoveUp.class));
 		getMnuTreePopup().add(actionMap_.get(ActMoveDown.class));
 		getMnuTreePopup().addSeparator();
 		getMnuTreePopup().add(actionMap_.get(ActBookMark.class));
 		getMnuTreePopup().add(actionMap_.get(ActBookMarkNavi.class));
 		getMnuTreePopup().addSeparator();
-
 //		getMnuTreePopup().add(actionMap_.get(ActShowParents.class));
-		getMnuTreePopup().add(actionMap_.get(ActExpandAll.class));
+		getMnuTreePopup().add(actionMap_.get(ActShow2ndTreeView.class));
 		getMnuTreePopup().add(actionMap_.get(ActShowReverseTreeView.class));
 		getMnuTreePopup().add(actionMap_.get(ActChooseTreeFont.class));
 		
@@ -2411,6 +2438,15 @@ public class FrmZeetaMain extends BaseFrame {
 			revTree_.setup();
 		}
 		return revTree_;
+	}
+	private Dlg2ndTree getDlg2ndTree(){
+		if(secndTree_ == null){
+			secndTree_ = new Dlg2ndTree(FrmZeetaMain.this);
+			secndTree_.setLocationRelativeTo(FrmZeetaMain.this);
+			secndTree_.setup(FrmZeetaMain.this, jTree);
+			
+		}
+		return secndTree_;
 	}
 	private DlgParentDocList getFrmParentList(){
 		if(frmParentList_== null){
@@ -2723,8 +2759,8 @@ public class FrmZeetaMain extends BaseFrame {
 					TreePath path = new TreePath( node.getPath() );
 					jTree.collapsePath(path);
 					//子ノードを読み込みなおしてみる
-					Action act = actionMap_.get(ActRefreshSpecific.class);
-					act.putValue(ActRefreshSpecific.REFRESH_NODE,  node);
+					Action act = actionMap_.get(ActRefreshNode.class);
+					act.putValue(ActRefreshNode.REFRESH_NODE,  node);
 					act.actionPerformed(null);
 				}
 			}else{
@@ -2964,7 +3000,23 @@ public class FrmZeetaMain extends BaseFrame {
 					if( dn == null ){
 						return;
 					}
-					expandNode(dn, inpDepth.getValue());
+					expandNode(jTree, dn, inpDepth.getValue());
+				}
+				protected void expandNode(JTree jTree, DocNode node, int depth){
+					if(node == null){
+						return;
+					}
+					if(depth <= 0){
+						jTree.collapsePath(new TreePath(node.getPath()));
+						return;
+					}
+					depth--;
+					Enumeration children = node.children();
+					while(children.hasMoreElements()){
+						DocNode child = (DocNode)children.nextElement();
+						jTree.expandPath(new TreePath(child.getPath()));
+						expandNode(jTree, child, depth);
+					}
 				}
 			});
 // 			inpDepth.setVisible(false);
@@ -2972,22 +3024,6 @@ public class FrmZeetaMain extends BaseFrame {
 		return inpDepth;
 	}
 	
-	void expandNode(DocNode node, int depth){
-		if(node == null){
-			return;
-		}
-		if(depth <= 0){
-			jTree.collapsePath(new TreePath(node.getPath()));
-			return;
-		}
-		depth--;
-		Enumeration children = node.children();
-		while(children.hasMoreElements()){
-			DocNode child = (DocNode)children.nextElement();
-			jTree.expandPath(new TreePath(child.getPath()));
-			expandNode(child, depth);
-		}
-	}
 
 	/**
 	 * This method initializes cntNodeInfo	

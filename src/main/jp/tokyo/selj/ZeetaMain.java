@@ -1,5 +1,7 @@
 package jp.tokyo.selj;
 
+import java.util.UUID;
+
 import javax.swing.JFrame;
 
 import jp.tokyo.selj.common.MessageView;
@@ -12,6 +14,7 @@ import org.apache.log4j.Logger;
 public class ZeetaMain  {
 	Logger log_ = Logger.getLogger(this.getClass());
 	static FrmZeetaMain mainView_;
+	static UUID PROCESS_ID = UUID.randomUUID();		//ノードのコピペ制御のために必要になった
 	
 	public static FrmZeetaMain getMainView(){
 		return mainView_;
@@ -83,5 +86,9 @@ public class ZeetaMain  {
 //				thisClass.setVisible(true);
 //			}
 //		});
+	}
+
+	public static String getProcessId() {
+		return PROCESS_ID.toString();
 	}
 }

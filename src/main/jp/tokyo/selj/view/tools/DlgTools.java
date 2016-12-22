@@ -88,9 +88,9 @@ public class DlgTools extends JDialog {
 
 	static {
 		ZEETA_INFO = new String[][]{
-				{"author", "くま吉"},
-				{"home page", "http://mm3991.qp.land.to/"},
-				{"mail address", "mm3991@mail.goo.ne.jp"},
+				{"author", "タンジ"},
+				{"home page", "http://sites.google.com/site/zeetahp/"},
+				{"mail address", "zeeta0703@gmail.com"},
 				{"database schema version", ZeetaDBManager.DB_VERSION},
 		};
 	}

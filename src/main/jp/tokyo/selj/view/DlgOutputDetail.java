@@ -1139,16 +1139,14 @@ public class DlgOutputDetail extends JDialog {
 			jTree = new JTree();
 			jTree.setShowsRootHandles(true);
 			jTree.setRootVisible(true);
-			jTree.setToggleClickCount(0);
-			jTree.setToolTipText("Enterキー,ダブルクリック,Popupメニューで正ツリーをポイントします。");
+			jTree.setToggleClickCount(2);
+			jTree.setToolTipText("Enterキー,ダブルクリック,PopupメニューでMain Treeをポイントします。");
 			jTree.addMouseListener(new java.awt.event.MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
 					if(e.getButton() == MouseEvent.BUTTON3){	//右ボタン
 						if(jTree.getSelectionPath() != null){
 							getMnuTreePopup().show(jTree, e.getX(), e.getY());
 						}
-					}else if(e.getClickCount() >= 2){
-						actSelect_.actionPerformed(null);
 					}
 				}
 			});

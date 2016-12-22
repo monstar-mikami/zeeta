@@ -7,6 +7,7 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.SystemColor;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -32,11 +33,10 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import jp.tokyo.selj.common.PreferenceWindowHelper;
-import jp.tokyo.selj.model.DocModel;
+import jp.tokyo.selj.model.DocModel4Reverse;
 import jp.tokyo.selj.model.DocNode;
 
 import org.apache.log4j.Logger;
@@ -102,7 +102,7 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 	private JPanel getJContentPane() {
 		if (jContentPane == null) {
 			jLabel = new JLabel();
-			jLabel.setText("double click/enter key/popup menuでMainTreeをポイント");
+			jLabel.setText("enter key / popup menu でMainTreeをポイント");
 			jLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
 			jLabel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
 			jContentPane = new JPanel();
@@ -135,16 +135,16 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 		if (jTree == null) {
 			jTree = new JTree();
 			jTree.setShowsRootHandles(true);
-			jTree.setToggleClickCount(0);
-			jTree.setToolTipText("Enterキーで正ツリーをポイントします。");
+			jTree.setToggleClickCount(2);	//ダブルクリックでノードの展開
+			jTree.setBackground(SystemColor.controlDkShadow);
+			jTree.setFont(new Font("Dialog", Font.PLAIN, 12));
+			jTree.setToolTipText("EnterキーでMain Treeをポイントします。");
 			jTree.addMouseListener(new java.awt.event.MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
 					if(e.getButton() == MouseEvent.BUTTON3){	//右ボタン
 						if(jTree.getSelectionPath() != null){
 							getMnuTreePopup().show(jTree, e.getX(), e.getY());
 						}
-					}else if(e.getClickCount() >= 2){
-						actSelect_.actionPerformed(null);
 					}
 				}
 			});
@@ -156,7 +156,7 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 			jTree.addTreeExpansionListener(new javax.swing.event.TreeExpansionListener() {
 				public void treeExpanded(javax.swing.event.TreeExpansionEvent e) {
 					Object node = e.getPath().getLastPathComponent();
-					docModel_.addJijiDocFromDb((DocNode)node);
+					docModel_.addMagoDocFromDb((DocNode)node);
 				}
 				public void treeCollapsed(javax.swing.event.TreeExpansionEvent e) {
 				}
@@ -166,8 +166,8 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 		return jTree;
 	}
 	
-	DocModel docModel_ = new DocModel();  //  @jve:decl-index=0:
-	DocTreeCellRenderer2 renderer_ = new DocTreeCellRenderer2(docModel_);
+	DocModel4Reverse docModel_ = new DocModel4Reverse();  //  @jve:decl-index=0:
+	DocTreeCellRenderer4ReverseTree renderer_ = new DocTreeCellRenderer4ReverseTree(docModel_);
 
 	private JPopupMenu mnuTreePopup = null;  //  @jve:decl-index=0:visual-constraint="348,25"
 
@@ -193,32 +193,6 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 		return bFont_;
 	}
 
-	class DocTreeCellRenderer2 extends DocTreeCellRenderer{
-		TreeNode[] path_;
-		public DocTreeCellRenderer2(DocModel docModel) {
-			super(docModel);
-		}
-		public void setPath(TreeNode[] path){
-			path_ = path;
-		}
-
-		@Override
-		protected void decorateFont(JTree tree, DocNode node) {
-			super.decorateFont(tree, node);
-			if(path_ == null || node.getLevel() < 1){	//node.getLevel()==0は、ルートなのでそのままにしておく
-				return;
-			}
-			int index = path_.length - node.getLevel() -1;
-			if( index >= 0 && path_.length > index &&
-				node.getUserObject().equals(
-					((DocNode)path_[index]).getUserObject()
-				) 
-			){
-//				setFont(cnvBoldFont(tree.getFont()));
-				setForeground(Color.GRAY);
-			}
-		}
-	}
 	DocNode curNode_;
 	boolean ignoreChange_ = false;
 	protected Preferences prefs_ = Preferences.userNodeForPackage(this.getClass());  //  @jve:decl-index=0:
@@ -379,22 +353,22 @@ public class DlgReverseTree extends JDialog implements TreeSelectionListener{
 				public void stateChanged(javax.swing.event.ChangeEvent e) {
 					expandNode((DocNode)docModel_.getRoot(), inpDepth.getValue());
 				}
+				void expandNode(DocNode node, int depth){
+					if(depth <= 0){
+						jTree.collapsePath(new TreePath(node.getPath()));
+						return;
+					}
+					depth--;
+					Enumeration children = node.children();
+					while(children.hasMoreElements()){
+						DocNode child = (DocNode)children.nextElement();
+						jTree.expandPath(new TreePath(child.getPath()));
+						expandNode(child, depth);
+					}
+				}
 			});
 		}
 		return inpDepth;
-	}
-	void expandNode(DocNode node, int depth){
-		if(depth <= 0){
-			jTree.collapsePath(new TreePath(node.getPath()));
-			return;
-		}
-		depth--;
-		Enumeration children = node.children();
-		while(children.hasMoreElements()){
-			DocNode child = (DocNode)children.nextElement();
-			jTree.expandPath(new TreePath(child.getPath()));
-			expandNode(child, depth);
-		}
 	}
 
 	/**
