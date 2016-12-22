@@ -2343,60 +2343,72 @@ public class FrmZeetaMain extends BaseFrame {
 		
 		//ctrl+C/X/V
 		class DelegateTreeAction extends AbstractAction {
-			Action act_;
+			Action act_ = null;
 			public DelegateTreeAction(Action act) {
+				if( act == null)
+					return;
 				putValue(Action.NAME, act.getValue(Action.NAME));
 				act_ = act;
 			}
 			public void actionPerformed(ActionEvent e) {
 				e.setSource(jTree);		//これがミソや！！！
+				if( act_ == null)
+					return;
 				act_.actionPerformed(e);
 			}
 		}
 
-		try{
-			Action act;
-			Object key = 
-				treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_MASK));
-			act = new DelegateTreeAction(treeActMap.get(key));
-			act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのコピー(ctrl+C)"); 
-			act.putValue(Action.SMALL_ICON, 
-				new ImageIcon(getClass().getResource("/image/copy.gif")));
-			getJToolBar().add(act);
-			actionMap_.put(ACTKEY_NODE_COPY, act);
-			
-			key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_MASK));
-			act = new DelegateTreeAction(treeActMap.get(key));
-			act.putValue(Action.SHORT_DESCRIPTION, "Treeノードをペースト時にカット(ctrl+X)"); 
-			act.putValue(Action.SMALL_ICON, 
-				new ImageIcon(getClass().getResource("/image/cut.gif")));
-			getJToolBar().add(act);
-			actionMap_.put(ACTKEY_NODE_CUT, act);
-			
-			key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.CTRL_MASK));
-			act = new DelegateTreeAction(treeActMap.get(key));
-			act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのペースト(ctrl+V)"); 
-			act.putValue(Action.SMALL_ICON, 
-				new ImageIcon(getClass().getResource("/image/paste.gif")));
-			getJToolBar().add(act);
-			actionMap_.put(ACTKEY_NODE_PASTE, act);
-		}catch(NullPointerException ex){
-			//TODO　MACの場合このエラーが発生する
-			//act = new DelegateTreeAction(treeActMap.get(key));
-			//暫定対応として、このエラーを無視し、ショートカットが使用できなくする
-			Action act =new AbstractAction() {
-				public void actionPerformed(ActionEvent e) {
-					//なにもしない
-					setEnabled(false);
-				}
-			};
-			actionMap_.put(ACTKEY_NODE_COPY, act);
-			actionMap_.put(ACTKEY_NODE_CUT, act);
-			actionMap_.put(ACTKEY_NODE_PASTE, act);
+		
+		//Windows / MAX_OSX
+		int ctrl_mask = KeyEvent.CTRL_MASK;
+		String ctrl_mask_str = "ctrl";
+		if(isMacOS()){
+			ctrl_mask = KeyEvent.CTRL_DOWN_MASK;
+			ctrl_mask_str = "command";
 		}
-
+		
+		Action act;
+		Object key = 
+			treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_C, ctrl_mask));
+		if( key == null){
+			act = new DelegateTreeAction(null);
+		}else{
+			act = new DelegateTreeAction(treeActMap.get(key));
+		}
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのコピー("+ctrl_mask_str+"+C)"); 
+		act.putValue(Action.SMALL_ICON, 
+			new ImageIcon(getClass().getResource("/image/copy.gif")));
+		getJToolBar().add(act);
+		actionMap_.put(ACTKEY_NODE_COPY, act);
+		
+		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_X, ctrl_mask));
+		if( key == null){
+			act = new DelegateTreeAction(null);
+		}else{
+			act = new DelegateTreeAction(treeActMap.get(key));
+		}
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードをペースト時にカット("+ctrl_mask_str+"+X)"); 
+		act.putValue(Action.SMALL_ICON, 
+			new ImageIcon(getClass().getResource("/image/cut.gif")));
+		getJToolBar().add(act);
+		actionMap_.put(ACTKEY_NODE_CUT, act);
+		
+		key =treeInputMap.get(KeyStroke.getKeyStroke(KeyEvent.VK_V, ctrl_mask));
+		if( key == null){
+			act = new DelegateTreeAction(null);
+		}else{
+			act = new DelegateTreeAction(treeActMap.get(key));
+		}
+		act.putValue(Action.SHORT_DESCRIPTION, "Treeノードのペースト("+ctrl_mask_str+"+V)"); 
+		act.putValue(Action.SMALL_ICON, 
+			new ImageIcon(getClass().getResource("/image/paste.gif")));
+		getJToolBar().add(act);
+		actionMap_.put(ACTKEY_NODE_PASTE, act);
 	}
-	
+	boolean isMacOS(){
+		String os_name = System.getProperty("os.name");
+		return os_name.toUpperCase().indexOf("MAC") > -1;
+	}
 	
 	
 	public void initState(){
