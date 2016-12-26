@@ -75,20 +75,20 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 						actionMap_.get(ActMoveDown.class).actionPerformed(null);
 						ret = true;
 						break;
-					case KeyEvent.VK_LEFT:
-						DocNode docNode = mainFrame_.nodeHistory_.back();
-						if(docNode != null ){
-							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
-						}
-						ret = true;
-						break;
-					case KeyEvent.VK_RIGHT:
-						docNode = mainFrame_.nodeHistory_.forward();
-						if(docNode != null ){
-							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
-						}
-						ret = true;
-						break;
+//					case KeyEvent.VK_LEFT:
+//						DocNode docNode = mainFrame_.nodeHistory_.back();
+//						if(docNode != null ){
+//							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+//						}
+//						ret = true;
+//						break;
+//					case KeyEvent.VK_RIGHT:
+//						docNode = mainFrame_.nodeHistory_.forward();
+//						if(docNode != null ){
+//							mainFrame_.showDetailAndSelectWord(docNode, (String)null);
+//						}
+//						ret = true;
+//						break;
 					case KeyEvent.VK_D:
 						actionMap_.get(ActRemoveDoc.class).actionPerformed(null);
 						ret = true;
