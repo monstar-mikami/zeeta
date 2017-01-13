@@ -13,6 +13,8 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 
+import jp.tokyo.selj.view.Util;
+
 public class TextUndoHandler implements UndoableEditListener {
 	UndoManager undo_ = new UndoManager();
 	UndoAction undoAction_ = new UndoAction();
@@ -93,10 +95,10 @@ public class TextUndoHandler implements UndoableEditListener {
 	    tc.getActionMap().put(undoAction_.getClass(), undoAction_);
 	    tc.getActionMap().put(redoAction_.getClass(), redoAction_);
 	    tc.getInputMap().put(
-	    		KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_MASK),
+	    		KeyStroke.getKeyStroke(KeyEvent.VK_Z, Util.keyModify_ctrl()),
 	    		undoAction_.getClass());
 	    tc.getInputMap().put(
-	    		KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_MASK),
+	    		KeyStroke.getKeyStroke(KeyEvent.VK_Y, Util.keyModify_ctrl()),
 	    		redoAction_.getClass());
 
 	}

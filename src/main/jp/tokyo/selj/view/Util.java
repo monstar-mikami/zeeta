@@ -39,7 +39,7 @@ public class Util {
 	}
 	public static int keyModify_ctrl(){
 		if(Util.isMacOS()){
-			return 4;
+			return 4;	// MAC command key
 		}else{
 			return KeyEvent.CTRL_MASK;
 		}
