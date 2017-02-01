@@ -54,7 +54,7 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 	}
 	private boolean dispatchKeyEvent_common(KeyEvent evt, boolean ret) {
 		if (evt.getID()  == KeyEvent.KEY_TYPED){
-//			log.debug("KEY_TYPED="+evt);
+			log.debug("KEY_TYPED>evt.paramString()="+evt.paramString());
 			switch((int)evt.getKeyChar()){
 			case KeyEvent.VK_ESCAPE:
 				actionMap_.get(ActCancelNewYouken.class).actionPerformed(null);
@@ -63,8 +63,7 @@ public class MainViewKeyDispatcher implements KeyEventDispatcher{
 			}
 		}else {
 			if (evt.getID()  == KeyEvent.KEY_PRESSED){
-//				log.debug("evt.getModifiers()="+evt.getModifiers());
-//				log.debug("Util.keyEvent_ctrl()="+Util.keyEvent_ctrl());
+				log.debug("KEY_PRESSED>evt.paramString()="+evt.paramString());
 				if( (evt.getModifiers() & Util.keyModify_ctrl() )!=0 ){
 					switch(evt.getKeyCode()){
 					case KeyEvent.VK_UP:

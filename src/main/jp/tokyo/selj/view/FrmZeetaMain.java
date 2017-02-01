@@ -2329,7 +2329,7 @@ public class FrmZeetaMain extends BaseFrame {
 		//DELキー
 		treeActMap.put(ActRemoveDoc.class, actionMap_.get(ActRemoveDoc.class));
 		treeInputMap.put(
-				KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), 
+				KeyStroke.getKeyStroke(Util.keyEvent_delete(), 0), 
 				ActRemoveDoc.class);
 
 		//F2, enter

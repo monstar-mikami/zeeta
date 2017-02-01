@@ -37,6 +37,13 @@ public class Util {
 			return "ctrl";
 		}
 	}
+	public static int keyEvent_delete(){
+		if(Util.isMacOS()){
+			return 8;	// MAC delete key
+		}else{
+			return KeyEvent.VK_DELETE;
+		}
+	}
 	public static int keyModify_ctrl(){
 		if(Util.isMacOS()){
 			return 4;	// MAC command key
